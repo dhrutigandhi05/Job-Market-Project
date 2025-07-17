@@ -6,7 +6,8 @@ from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
 
 API_URL = "https://jsearch.p.rapidapi.com/"
 
-def fetch_page(page=1, page_size=20, **kwargs):
+# fetches a single page of job data from the api
+def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     HEADERS = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
         "X-RapidAPI-Host": RAPIDAPI_HOST
