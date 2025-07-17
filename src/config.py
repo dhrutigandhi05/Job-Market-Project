@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 
 load_dotenv()
 
+# load environment variables
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 RAPIDAPI_HOST = os.getenv("RAPIDAPI_HOST")
 AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
@@ -12,6 +13,7 @@ AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
+# connect to s3
 def get_s3_client():
     return boto3.client(
         's3',
