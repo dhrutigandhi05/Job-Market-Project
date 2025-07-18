@@ -4,6 +4,8 @@ import requests
 from datetime import datetime, timezone
 from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
 
+print("host:", RAPIDAPI_HOST, "key:", RAPIDAPI_KEY[:4]+"…") #verify config
+
 API_URL = "https://jsearch.p.rapidapi.com/search"
 
 # fetches a single page of job data from the api
