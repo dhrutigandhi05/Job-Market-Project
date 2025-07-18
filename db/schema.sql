@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     date_posted DATE
 );
 
-CREATE TABLE IF NOT EXISTS skills (
+CREATE TABLE IF NOT EXISTS job_skills (
    job_id TEXT REFERENCES jobs(job_id),
-   skill TEXT,
+   skill TEXT
 );
