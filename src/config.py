@@ -22,10 +22,10 @@ def get_s3_client():
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY
     )
 
-# db connection placeholder
-# DATABASE_URL = os.getenv("DATABASE_URL")
-# def get_db_engine():
-#     if DATABASE_URL:
-#         return create_engine(DATABASE_URL)
-#     else:
-#         raise ValueError("DATABASE_URL is not set in the environment variables.")
+# db connection
+DATABASE_URL = os.getenv("DATABASE_URL")
+def get_db_engine():
+    if DATABASE_URL:
+        return create_engine(DATABASE_URL)
+    else:
+        raise ValueError("DATABASE_URL is not set in the environment variables.")
