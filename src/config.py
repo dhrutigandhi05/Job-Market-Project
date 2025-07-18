@@ -12,6 +12,7 @@ AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # connect to s3
 def get_s3_client():
@@ -22,8 +23,7 @@ def get_s3_client():
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY
     )
 
-# db connection
-DATABASE_URL = os.getenv("DATABASE_URL")
+# postgres db connection
 def get_db_engine():
     if DATABASE_URL:
         return create_engine(DATABASE_URL)
