@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
 
-# print("host:", RAPIDAPI_HOST, "key:", RAPIDAPI_KEY[:4]+"…") #verify config
+# print("host:", RAPIDAPI_HOST, "key:", RAPIDAPI_KEY[:4]+"…") # verify config
 
 API_URL = "https://jsearch.p.rapidapi.com/search"
 
@@ -19,6 +19,15 @@ def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     response = requests.get(API_URL, headers=HEADERS, params=query)
     response.raise_for_status()  # raise error for bad responses
     return response.json().get("data", [])
+
+def handler(event, context):
+    query = event.get("query", "data science")
+    page_size = event.get("page_size", 50)
+    max_pages = event.get("max_pages", 10)
+
+    print(f"Fetching jobs for query: {query}, page size: {page_size}, max pages: {max_pages}")
+    save_to_s3(query=query, page_size=page_size, max_pages=max_pages)
+    return {"status": "success", "message": "Jobs fetched and saved to S3"}
 
 # fetches all pages of job data based on the query
 def fetch_all_jobs(query, page_size=50, max_pages=10):
@@ -55,5 +64,5 @@ def save_to_s3(query, page_size=50, max_pages=10):
     # confirm upload
     print(f"Uploaded {len(all_jobs)} pages to s3://{S3_BUCKET_NAME}/raw/{today}/")
 
-if __name__ == "__main__":
-    save_to_s3(query="data science", page_size=50, max_pages=20)
+# if __name__ == "__main__":
+#     save_to_s3(query="data science", page_size=50, max_pages=20)
