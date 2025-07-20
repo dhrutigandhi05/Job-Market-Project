@@ -88,7 +88,7 @@ if __name__ == "__main__":
     for key in keys:
         print("Processing", key)
         page_df = load_page_to_df(key)
-        clean    = clean_df(page_df)
+        clean = clean_df(page_df)
         write_to_db(clean)
 
     print("pages loaded into db")
