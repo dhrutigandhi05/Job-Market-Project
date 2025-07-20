@@ -12,7 +12,31 @@ def list_s3_files(prefix: str) -> list[str]:
 
 def load_page_to_df(key: str) -> pd.DataFrame:
     s3 = get_s3_client()
-    object = s3.get_object(Bucket=S3_BUCKET_NAME, Key=key) # get the object from S3
-    data = json.loads(object["Body"].read()) # reads the object body and converts it to a JSON object
-    return pd.json_normalize(data) # convert the JSON object to a pandas DataFrame
+    resp = s3.get_object(Bucket=S3_BUCKET_NAME, Key=key) # get the object from S3 bucket
+    raw  = resp["Body"].read() # read the raw data from the object
+    records = json.loads(raw) # load the raw data as a JSON object
+    return pd.json_normalize(records) # convert the JSON object to a pandas DataFrame
 
+def clean_df(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.rename(columns={"job_min_salary": "min_salary", "job_max_salary": "max_salary"}).copy() # rename columns
+    df = df.dropna(subset=["min_salary", "max_salary"], how="all") # drop rows with NaN in min_salary and max_salary
+    df["min_salary"].fillna(df["max_salary"], inplace=True) # fill NaN in min_salary with max_salary
+    df["max_salary"].fillna(df["min_salary"], inplace=True) # fill NaN in max_salary with min_salary
+    df["avg_salary"] = (df.min_salary + df.max_salary) / 2 # calculate average salary
+    df["date_posted"] = pd.to_datetime(df.job_posted_at_datetime_utc).dt.date # convert job_posted_at_datetime_utc to date
+
+    # create a list of skills from job_highlights.Qualifications split by -
+    df["skills_list"] = (
+        df["job_highlights.Qualifications"].fillna("").apply(
+            lambda x: [
+                item.strip().lower()
+                for item in x.split("-") if item.strip()
+            ]
+        )
+    )
+
+    df["title"] = df.job_title
+    df["company"] = df.employer_name
+    df["location"] = df.job_location
+
+    return df
