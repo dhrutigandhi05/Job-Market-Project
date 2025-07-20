@@ -40,3 +40,37 @@ def clean_df(df: pd.DataFrame) -> pd.DataFrame:
     df["location"] = df.job_location
 
     return df
+
+def write_to_db(df: pd.DataFrame) -> None:
+    engine = get_db_engine()
+
+    jobs_cols = [
+        "job_id",
+        "title",
+        "company",
+        "location",
+        "salary_min",
+        "salary_max",
+        "avg_salary",
+        "date_posted"
+    ]
+
+    df[jobs_cols].to_sql(
+        "jobs",
+        engine,
+        if_exists="append",
+        index=False
+    )
+
+    skills_df = (
+        df[["job_id", "skills_list"]]
+          .explode("skills_list")
+          .rename(columns={"skills_list": "skill"})
+    )
+    
+    skills_df.to_sql(
+        "job_skills",
+        engine,
+        if_exists="append",
+        index=False
+    )
