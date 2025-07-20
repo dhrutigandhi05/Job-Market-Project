@@ -67,10 +67,28 @@ def write_to_db(df: pd.DataFrame) -> None:
           .explode("skills_list")
           .rename(columns={"skills_list": "skill"})
     )
-    
+
     skills_df.to_sql(
         "job_skills",
         engine,
         if_exists="append",
         index=False
     )
+
+if __name__ == "__main__":
+    # determine today's prefix
+    today  = datetime.utcnow().date().isoformat()
+    prefix = f"raw/{today}/"
+
+    keys = list_s3_files(prefix)
+    if not keys:
+        print(f"No raw files found under prefix {prefix}")
+        exit(0)
+
+    for key in keys:
+        print("Processing", key)
+        page_df = load_page_to_df(key)
+        clean    = clean_df(page_df)
+        write_to_db(clean)
+
+    print("pages loaded into db")
