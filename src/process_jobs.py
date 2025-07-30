@@ -1,8 +1,18 @@
 import io
 import json
 import pandas as pd
+from sqlalchemy import text
 from datetime import datetime
 from config import get_s3_client, get_db_engine, S3_BUCKET_NAME
+
+def handler(event, context):
+    for rec in event["Records"]:
+        key = rec["s3"]["object"]["key"]
+        print("Processing", key)
+        page_df = load_page_to_df(key)
+        clean = clean_df(page_df)
+        write_to_db(clean)
+    return {"processed": len(event["Records"])}
 
 # list all files in the specified S3 bucket with the given prefix
 def list_s3_files(prefix: str) -> list[str]:
@@ -68,25 +78,30 @@ def write_to_db(df: pd.DataFrame) -> None:
         "date_posted"
     ]
 
-    df[jobs_cols].to_sql(
-        "jobs",
-        engine,
-        if_exists="append",
-        index=False
-    )
+    with engine.begin() as conn:
+        # fetch existing keys
+        existing = conn.execute(text("SELECT job_id FROM jobs")).all()
+        existing_ids = {r[0] for r in existing}
 
-    skills_df = (
-        df[["job_id", "skills_list"]]
-          .explode("skills_list")
-          .rename(columns={"skills_list": "skill"})
-    )
+        # only insert brand-new rows
+        new_jobs = df[~df.job_id.isin(existing_ids)]
+        if new_jobs.empty:
+            print("→ No new jobs to insert.")
+        else:
+            new_jobs[jobs_cols].to_sql(
+                "jobs", conn, if_exists="append", index=False)
+            print(f"→ Inserted {len(new_jobs)} new job rows.")
 
-    skills_df.to_sql(
-        "job_skills",
-        engine,
-        if_exists="append",
-        index=False
-    )
+        # likewise for skills
+        if not new_jobs.empty:
+            skills = (
+                new_jobs[["job_id","skills_list"]]
+                .explode("skills_list")
+                .rename(columns={"skills_list":"skill"})
+            )
+            skills.to_sql(
+                "job_skills", conn, if_exists="append", index=False)
+            print(f"→ Inserted {len(skills)} new skill rows.")
 
 def latest_prefix() -> str:
     keys = list_s3_files("raw/")
@@ -96,7 +111,7 @@ def latest_prefix() -> str:
 
 if __name__ == "__main__":
     prefix = latest_prefix()
-    
+
     if not prefix:
         print("No raw/<date>/ folders found")
         exit(0)

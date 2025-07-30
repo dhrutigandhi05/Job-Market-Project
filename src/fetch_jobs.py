@@ -21,16 +21,24 @@ def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     return response.json().get("data", [])
 
 def handler(event, context):
-    # pull exactly one page number from the SQS message
-    page = int(event["Records"][0]["body"])
-    data = fetch_page(page=page, page_size=50, query="data science")
+    query = "data science"
+    page_size = 50
+    max_pages = 10
 
-    # upload just this one page
-    s3 = get_s3_client()
     today = datetime.utcnow().date().isoformat()
-    key   = f"raw/{today}/page_{page}.json"
-    s3.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body=json.dumps(data))
-    return {"page": page, "count": len(data)}
+    s3 = get_s3_client()
+
+    for page in range(1, max_pages+1):
+        data = fetch_page(page, page_size, query)
+
+        if not data:
+            break
+
+        key = f"raw/{today}/page_{page}.json"
+        s3.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body=json.dumps(data))
+        time.sleep(1)
+
+    return {"status": "done", "pages": page}
 
 # fetches all pages of job data based on the query
 def fetch_all_jobs(query, page_size=50, max_pages=10):
