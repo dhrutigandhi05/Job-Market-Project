@@ -67,5 +67,5 @@ def save_to_s3(query, page_size=50, max_pages=10):
     # confirm upload
     print(f"Uploaded {len(all_jobs)} pages to s3://{S3_BUCKET_NAME}/raw/{today}/")
 
-# if __name__ == "__main__":
-#     save_to_s3(query="data science", page_size=50, max_pages=20)
+if __name__ == "__main__":
+    save_to_s3(query="data science", page_size=50, max_pages=20)
