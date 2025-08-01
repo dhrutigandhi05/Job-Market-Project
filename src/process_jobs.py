@@ -109,17 +109,17 @@ def latest_prefix() -> str:
     dates = sorted({ key.split("/")[1] for key in keys if key.count("/")>=2 })
     return f"raw/{dates[-1]}/"  if dates else ""
 
-if __name__ == "__main__":
-    prefix = latest_prefix()
+# if __name__ == "__main__":
+#     prefix = latest_prefix()
 
-    if not prefix:
-        print("No raw/<date>/ folders found")
-        exit(0)
+#     if not prefix:
+#         print("No raw/<date>/ folders found")
+#         exit(0)
 
-    for key in list_s3_files(prefix):
-        print("Processing", key)
-        page_df = load_page_to_df(key)
-        clean = clean_df(page_df)
-        write_to_db(clean)
+#     for key in list_s3_files(prefix):
+#         print("Processing", key)
+#         page_df = load_page_to_df(key)
+#         clean = clean_df(page_df)
+#         write_to_db(clean)
 
-    print("pages loaded into db")
+#     print("pages loaded into db")
