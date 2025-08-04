@@ -1,0 +1,12 @@
+FROM public.ecr.aws/lambda/python:3.9
+
+# install dependencies
+COPY requirements.lambda.txt .
+RUN pip install --no-cache-dir -r requirements.lambda.txt
+
+# copy code
+COPY src/ ${LAMBDA_TASK_ROOT}/src/
+COPY src/config.py ${LAMBDA_TASK_ROOT}/config.py
+
+# set the handler to your processor
+CMD ["src/process_jobs.handler"]
