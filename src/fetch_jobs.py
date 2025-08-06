@@ -16,9 +16,25 @@ def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     }
 
     query = {"page": page, "page_size": page_size, **kwargs}
-    response = requests.get(API_URL, headers=HEADERS, params=query)
-    response.raise_for_status()  # raise error for bad responses
-    return response.json().get("data", [])
+    max_retries = 5
+    
+    for attempt in range(max_retries):
+        resp = requests.get(API_URL, headers=HEADERS, params=query)
+        
+        if resp.status_code == 429:
+            wait = 2 ** attempt
+            print(f"rate limited, retrying in {wait}s (attempt {attempt+1}/{max_retries})")
+            time.sleep(wait)
+            continue
+        
+        resp.raise_for_status()
+        return resp.json().get("data", [])
+
+    raise RuntimeError(f"rate limited after {max_retries} attempts")
+    
+    # response = requests.get(API_URL, headers=HEADERS, params=query)
+    # response.raise_for_status()  # raise error for bad responses
+    # return response.json().get("data", [])
 
 def handler(event, context):
     query = "data science"
