@@ -29,7 +29,7 @@ def handler(event, context):
     s3 = get_s3_client()
 
     for page in range(1, max_pages+1):
-        data = fetch_page(page, page_size, query)
+        data = fetch_page(page, page_size, query=query)
 
         if not data:
             break
