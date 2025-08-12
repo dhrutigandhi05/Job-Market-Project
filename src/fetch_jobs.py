@@ -1,7 +1,7 @@
 import json
 import time
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
 
 # print("host:", RAPIDAPI_HOST, "key:", RAPIDAPI_KEY[:4]+"…") # verify config
@@ -16,37 +16,9 @@ def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     }
 
     query = {"page": page, "page_size": page_size, **kwargs}
-    max_retries = 5
-    
-    for attempt in range(max_retries):
-        resp = requests.get(API_URL, headers=HEADERS, params=query, timeout=20)
-        
-        if resp.status_code == 429:
-            reset = (
-                resp.headers.get("x-ratelimit-requests-reset")
-                or resp.headers.get("x-ratelimit-reset")
-            )
-
-            if reset:
-                wait = int(reset)
-            else:
-                wait = min(60, 2 ** attempt)
-
-            print(f"rate limited, waiting {wait}s then retrying "
-                  f"({attempt+1}/{max_retries})")
-            
-            time.sleep(wait)
-            continue
-        
-        resp.raise_for_status()
-        return resp.json().get("data", [])
-
-    print("still rate limited after retries")
-    return None
-    
-    # response = requests.get(API_URL, headers=HEADERS, params=query)
-    # response.raise_for_status()  # raise error for bad responses
-    # return response.json().get("data", [])
+    response = requests.get(API_URL, headers=HEADERS, params=query)
+    response.raise_for_status()  # raise error for bad responses
+    return response.json().get("data", [])
 
 def handler(event, context):
     query = "data science"
@@ -56,20 +28,17 @@ def handler(event, context):
     today = datetime.utcnow().date().isoformat()
     s3 = get_s3_client()
 
-    pages_completed = 0
     for page in range(1, max_pages+1):
         data = fetch_page(page, page_size, query=query)
 
         if not data:
-            print("end due to rate limit")
-            break        
+            break
 
         key = f"raw/{today}/page_{page}.json"
         s3.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body=json.dumps(data))
-        pages_completed += 1
         time.sleep(1)
 
-    return {"status": "done", "pages": pages_completed}
+    return {"status": "done", "pages": page}
 
 # fetches all pages of job data based on the query
 def fetch_all_jobs(query, page_size=50, max_pages=10):
