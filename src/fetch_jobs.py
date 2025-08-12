@@ -1,6 +1,7 @@
 import json
 import time
 import requests
+import random
 from datetime import datetime, timezone
 from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
 
@@ -12,13 +13,37 @@ API_URL = "https://jsearch.p.rapidapi.com/search"
 def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     HEADERS = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": RAPIDAPI_HOST
+        "X-RapidAPI-Host": RAPIDAPI_HOST,
     }
 
     query = {"page": page, "page_size": page_size, **kwargs}
-    response = requests.get(API_URL, headers=HEADERS, params=query)
-    response.raise_for_status()  # raise error for bad responses
-    return response.json().get("data", [])
+    max_retries = 6
+
+    for attempt in range(1, max_retries + 1):
+        resp = requests.get(API_URL, headers=HEADERS, params=query, timeout=15)
+
+        # if its a successful response, return the data
+        if 200 <= resp.status_code < 300:
+            return resp.json().get("data", [])
+        
+        if resp.status_code == 429:
+            retry_after = resp.headers.get("Retry-After")
+
+            if retry_after and retry_after.isdigit():
+                wait = int(retry_after)
+            else:
+                wait = min(2 ** attempt, 60) + random.uniform(0, 0.5) # exponential backoff, max 60 seconds
+            
+            time.sleep(wait)
+            continue
+
+        resp.raise_for_status()
+
+    raise RuntimeError("RapidAPI still rate limiting after retries")
+
+    # response = requests.get(API_URL, headers=HEADERS, params=query)
+    # response.raise_for_status()  # raise error for bad responses
+    # return response.json().get("data", [])
 
 def handler(event, context):
     query = "data science"
