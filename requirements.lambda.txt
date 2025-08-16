@@ -2,3 +2,4 @@ python-dotenv
 requests
 boto3
 sqlalchemy
+pandas
