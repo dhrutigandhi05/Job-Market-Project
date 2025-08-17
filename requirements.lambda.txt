@@ -3,3 +3,4 @@ requests
 boto3
 sqlalchemy
 pandas
+psycopg2-binary
