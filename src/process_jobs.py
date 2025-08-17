@@ -49,11 +49,13 @@ def clean_df(df: pd.DataFrame) -> pd.DataFrame:
     # extract skills: handle both list and string
     def extract_skills(x):
         if isinstance(x, list):
-            return [item.strip().lower() for item in x if isinstance(item, str) and item.strip()]
-        if isinstance(x, str):
-            return [itm.strip().lower() for itm in x.split("-") if itm.strip()]
-        # covers x == None or NaN
-        return []
+            skills = [s.strip().lower() for s in x if isinstance(s, str) and s.strip()]
+        elif isinstance(x, str):
+            skills = [s.strip().lower() for s in x.split("-") if s.strip()]
+        else:
+            return []
+
+        return sorted(set(skills))
 
     df.loc[:, "skills_list"] = df["job_highlights.Qualifications"].apply(extract_skills)
 
