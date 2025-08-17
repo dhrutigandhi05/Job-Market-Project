@@ -87,11 +87,11 @@ def write_to_db(df: pd.DataFrame) -> None:
 
         # only insert brand-new rows
         new_jobs = df[~df.job_id.isin(existing_ids)]
+
         if new_jobs.empty:
             print("→ No new jobs to insert.")
         else:
-            new_jobs[jobs_cols].to_sql(
-                "jobs", conn, if_exists="append", index=False)
+            new_jobs[jobs_cols].to_sql("jobs", conn, if_exists="append", index=False)
             print(f"→ Inserted {len(new_jobs)} new job rows.")
 
         # likewise for skills
@@ -101,9 +101,13 @@ def write_to_db(df: pd.DataFrame) -> None:
                 .explode("skills_list")
                 .rename(columns={"skills_list":"skill"})
             )
-            skills.to_sql(
-                "job_skills", conn, if_exists="append", index=False)
-            print(f"→ Inserted {len(skills)} new skill rows.")
+
+            skills["skill"] = skills["skill"].astype(str).str.strip().str.lower()
+            skills = skills.dropna().drop_duplicates(subset=["job_id", "skill"])
+
+            if not skills.empty:
+                skills.to_sql("job_skills", conn, if_exists="append", index=False)
+                print(f"→ Inserted {len(skills)} new skill rows.")
 
 def latest_prefix() -> str:
     keys = list_s3_files("raw/")
