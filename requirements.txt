@@ -7,3 +7,4 @@ numpy
 pyarrow
 sqlalchemy
 psycopg2-binary
+altair
