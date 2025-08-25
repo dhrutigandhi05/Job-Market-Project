@@ -1,2 +1,3 @@
 .env
 mydb.dump
+secrets.toml
