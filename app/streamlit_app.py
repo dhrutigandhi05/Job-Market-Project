@@ -104,3 +104,15 @@ def load_salary(keyword, start_d, end_d, smin, smax):
     # make a salary range
     df["range"] = df[["bin_min", "bin_max"]].apply(lambda r: f"{int(r.bin_min)}–{int(r.bin_max)}", axis=1)
     return df
+
+# main app (UI)
+st.set_page_config(page_title="Job Trends Dashboard", layout="wide")
+st.title("Job Trends Dashboard")
+
+# sidebar filters
+with st.sidebar:
+    st.subheader("Filters")
+    kw = st.text_input("Keyword (title/company/location)", value="data")
+    start_d = st.date_input("Start date", date.today() - timedelta(days=30))
+    end_d = st.date_input("End date", date.today())
+    smin, smax = st.slider("Avg salary range", 0, 400000, (0, 250000), step=5000)
