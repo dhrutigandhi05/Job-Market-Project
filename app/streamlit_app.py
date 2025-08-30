@@ -38,7 +38,7 @@ def load_jobs(keyword, start_d, end_d, smin, smax, limit=500):
         FROM jobs j
         WHERE {where}
         ORDER BY j.date_posted DESC, j.job_id DESC
-        LIMIT :limit
+        LIMIT :limit;
     """
     return run_df(sql, params)
 
@@ -50,7 +50,7 @@ def load_trend(keyword, start_d, end_d, smin, smax):
         FROM jobs j
         WHERE {where}
         GROUP BY 1
-        ORDER BY 1
+        ORDER BY 1;
     """
     return run_df(sql, params)
 
@@ -64,7 +64,7 @@ def load_top_companies(keyword, start_d, end_d, smin, smax, topn=15):
         WHERE {where}
         GROUP BY 1
         ORDER BY 2 DESC
-        LIMIT :topn
+        LIMIT :topn;
     """
     return run_df(sql, params)
 
@@ -79,6 +79,6 @@ def load_top_skills(keyword, start_d, end_d, smin, smax, topn=20):
         WHERE {where}
         GROUP BY 1
         ORDER BY 2 DESC
-        LIMIT :topn
+        LIMIT :topn;
     """
     return run_df(sql, params)
