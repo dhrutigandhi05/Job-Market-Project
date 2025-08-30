@@ -53,3 +53,17 @@ def load_trend(keyword, start_d, end_d, smin, smax):
         ORDER BY 1
     """
     return run_df(sql, params)
+
+# load top companies from the database
+def load_top_companies(keyword, start_d, end_d, smin, smax, topn=15):
+    where, params = filters(keyword, start_d, end_d, smin, smax)
+    params["topn"] = topn
+    sql = f"""
+        SELECT j.company, COUNT(DISTINCT j.job_id) AS c
+        FROM jobs j
+        WHERE {where}
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT :topn
+    """
+    return run_df(sql, params)
