@@ -67,3 +67,18 @@ def load_top_companies(keyword, start_d, end_d, smin, smax, topn=15):
         LIMIT :topn
     """
     return run_df(sql, params)
+
+# load top skills from the database
+def load_top_skills(keyword, start_d, end_d, smin, smax, topn=20):
+    where, params = filters(keyword, start_d, end_d, smin, smax)
+    params["topn"] = topn
+    sql = f"""
+        SELECT LOWER(js.skill) AS skill, COUNT(*) AS c
+        FROM job_skills js
+        JOIN jobs j ON j.job_id = js.job_id
+        WHERE {where}
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT :topn
+    """
+    return run_df(sql, params)
