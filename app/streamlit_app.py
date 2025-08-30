@@ -41,3 +41,15 @@ def load_jobs(keyword, start_d, end_d, smin, smax, limit=500):
         LIMIT :limit
     """
     return run_df(sql, params)
+
+# load job trends from the database
+def load_trend(keyword, start_d, end_d, smin, smax):
+    where, params = filters(keyword, start_d, end_d, smin, smax)
+    sql = f"""
+        SELECT j.date_posted::date AS d, COUNT(DISTINCT j.job_id) AS jobs
+        FROM jobs j
+        WHERE {where}
+        GROUP BY 1
+        ORDER BY 1
+    """
+    return run_df(sql, params)
