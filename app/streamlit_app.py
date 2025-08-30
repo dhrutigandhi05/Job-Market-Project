@@ -82,3 +82,25 @@ def load_top_skills(keyword, start_d, end_d, smin, smax, topn=20):
         LIMIT :topn;
     """
     return run_df(sql, params)
+
+# load salary distribution from the database
+def load_salary(keyword, start_d, end_d, smin, smax):
+    where, params = filters(keyword, start_d, end_d, smin, smax)
+    sql = f"""
+        SELECT width_bucket(j.avg_salary, :smin, :smax, 20) AS bin,
+               MIN(j.avg_salary) AS bin_min,
+               MAX(j.avg_salary) AS bin_max,
+               COUNT(*) AS c
+        FROM jobs j
+        WHERE {where}
+        GROUP BY 1
+        ORDER BY 1;
+    """
+    df = run_df(sql, params)
+
+    if df.empty:
+        return df
+    
+    # make a salary range
+    df["range"] = df[["bin_min", "bin_max"]].apply(lambda r: f"{int(r.bin_min)}–{int(r.bin_max)}", axis=1)
+    return df
