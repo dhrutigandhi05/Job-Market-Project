@@ -116,3 +116,9 @@ with st.sidebar:
     start_d = st.date_input("Start date", date.today() - timedelta(days=30))
     end_d = st.date_input("End date", date.today())
     smin, smax = st.slider("Avg salary range", 0, 400000, (0, 250000), step=5000)
+
+jobs_df = load_jobs(kw, start_d, end_d, smin, smax, limit=1000)
+trend_df = load_trend(kw, start_d, end_d, smin, smax)
+companies_df = load_top_companies(kw, start_d, end_d, smin, smax)
+skills_df = load_top_skills(kw, start_d, end_d, smin, smax)
+salary_df = load_salary(kw, start_d, end_d, smin, smax)
