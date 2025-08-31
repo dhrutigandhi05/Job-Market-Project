@@ -150,3 +150,18 @@ with c1:
     else:
         st.info("No data available for this time window.")
 
+# top companies
+with c2:
+    st.subheader("Top Companies")
+
+    if not companies_df.empty:
+        chart = (
+            alt.Chart(companies_df) # companies chart
+            .mark_bar() # bar chart
+            .encode(y=alt.Y("company:N", sort="-x"), x="c:Q")
+            .properties(height=300)
+        )
+
+        st.altair_chart(chart, use_container_width=True) # display chart
+    else:
+        st.info("No companies found.")
