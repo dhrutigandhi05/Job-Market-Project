@@ -130,3 +130,23 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Jobs (rows shown)", len(jobs_df))
 col2.metric("Unique Companies", jobs_df['company'].nunique() if not jobs_df.empty else 0)
 col3.metric("Unique Locations", jobs_df['location'].nunique() if not jobs_df.empty else 0)
+
+# charts
+c1, c2 = st.columns(2)
+
+# job trends 
+with c1:
+    st.subheader("Job Trends")
+
+    if not trend_df.empty:
+        chart = (
+            alt.Chart(trend_df) # trends chart
+            .mark_line(point=True) # line chart
+            .encode(x="d:T", y="jobs:Q")
+            .properties(height=300)
+        )
+
+        st.altair_chart(chart, use_container_width=True) # display chart
+    else:
+        st.info("No data available for this time window.")
+
