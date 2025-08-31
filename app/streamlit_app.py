@@ -112,13 +112,21 @@ st.title("Job Trends Dashboard")
 # sidebar filters
 with st.sidebar:
     st.subheader("Filters")
-    kw = st.text_input("Keyword (title/company/location)", value="data")
-    start_d = st.date_input("Start date", date.today() - timedelta(days=30))
+    default_start = date.today() - timedelta(days=30)
+    kw = st.text_input("Keyword (title / company / location)", value="data")
+    start_d = st.date_input("Start date", default_start)
     end_d = st.date_input("End date", date.today())
     smin, smax = st.slider("Avg salary range", 0, 400000, (0, 250000), step=5000)
 
+# load data
 jobs_df = load_jobs(kw, start_d, end_d, smin, smax, limit=1000)
 trend_df = load_trend(kw, start_d, end_d, smin, smax)
 companies_df = load_top_companies(kw, start_d, end_d, smin, smax)
 skills_df = load_top_skills(kw, start_d, end_d, smin, smax)
 salary_df = load_salary(kw, start_d, end_d, smin, smax)
+
+# kpis
+col1, col2, col3 = st.columns(3)
+col1.metric("Jobs (rows shown)", len(jobs_df))
+col2.metric("Unique Companies", jobs_df['company'].nunique() if not jobs_df.empty else 0)
+col3.metric("Unique Locations", jobs_df['location'].nunique() if not jobs_df.empty else 0)
