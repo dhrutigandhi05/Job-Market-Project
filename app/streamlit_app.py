@@ -86,6 +86,9 @@ def load_top_skills(keyword, start_d, end_d, smin, smax, topn=20):
 
 # load salary distribution from the database
 def load_salary(keyword, start_d, end_d, smin, smax):
+    if smax <= smin:
+        return pd.DataFrame(columns=["bin","bin_min","bin_max","c","range"])
+    
     where, params = filters(keyword, start_d, end_d, smin, smax)
     sql = f"""
         SELECT width_bucket(j.avg_salary, :smin, :smax, 20) AS bin,
