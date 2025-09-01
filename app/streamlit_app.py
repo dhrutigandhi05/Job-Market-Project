@@ -165,3 +165,21 @@ with c2:
         st.altair_chart(chart, use_container_width=True) # display chart
     else:
         st.info("No companies found.")
+
+c3, c4 = st.columns(2)
+
+# top skills
+with c3:
+    st.subheader("Top skills")
+
+    if not skills_df.empty:
+        chart = (
+            alt.Chart(skills_df) 
+            .mark_bar() # bar chart
+            .encode(y=alt.Y("skill:N", sort="-x"), x="c:Q")
+            .properties(height=320)
+        )
+
+        st.altair_chart(chart, use_container_width=True) # display chart
+    else:
+        st.info("No skills found.")
