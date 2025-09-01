@@ -183,3 +183,21 @@ with c3:
         st.altair_chart(chart, use_container_width=True) # display chart
     else:
         st.info("No skills found.")
+
+# avg salary distribution
+with c4:
+    st.subheader("Salary distribution")
+
+    if not salary_df.empty:
+        chart = (
+            alt.Chart(salary_df)
+            .mark_bar() # bar chart
+            .encode(x=alt.X("range:N", sort=None, title="Avg salary bin"),
+                    y=alt.Y("c:Q", title="Count"))
+            .properties(height=320)
+        )
+
+        st.altair_chart(chart, use_container_width=True) # display chart
+    else:
+        st.info("No salary data found.")
+
