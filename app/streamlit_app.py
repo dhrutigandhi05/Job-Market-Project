@@ -201,3 +201,11 @@ with c4:
     else:
         st.info("No salary data found.")
 
+# results table
+st.subheader("Matching Job Listings")
+
+if not jobs_df.empty:
+    show_cols = ["job_id", "title", "company", "location", "salary_min", "salary_max", "avg_salary", "date_posted"]
+    st.dataframe(jobs_df[show_cols], use_container_width=True, hide_index=True)
+else:
+    st.info("No job listings found.")
