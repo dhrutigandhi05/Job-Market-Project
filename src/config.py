@@ -74,3 +74,8 @@ def _load_secret() -> dict:
 # helper function to get config values
 def cfg(key: str, default=None):
     return _load_secret().get(key, default)
+
+# connect to s3
+def get_s3_client():
+    region = cfg("AWS_DEFAULT_REGION")  or os.getenv("AWS_REGION") or "ca-central-1"
+    return boto3.client('s3', region_name=region)
