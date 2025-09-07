@@ -3,7 +3,8 @@ import time
 import requests
 import random
 from datetime import datetime, timezone
-from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
+# from config import get_s3_client, S3_BUCKET_NAME, RAPIDAPI_KEY, RAPIDAPI_HOST
+from config import get_s3_client, get_db_engine, cfg
 
 # print("host:", RAPIDAPI_HOST, "key:", RAPIDAPI_KEY[:4]+"…") # verify config
 

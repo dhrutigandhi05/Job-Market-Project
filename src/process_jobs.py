@@ -3,7 +3,8 @@ import json
 import pandas as pd
 from sqlalchemy import text
 from datetime import datetime
-from config import get_s3_client, get_db_engine, S3_BUCKET_NAME
+# from config import get_s3_client, get_db_engine, S3_BUCKET_NAME
+from config import get_s3_client, get_db_engine, cfg
 
 def handler(event, context):
     for rec in event["Records"]:
