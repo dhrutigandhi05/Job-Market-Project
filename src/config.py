@@ -40,3 +40,33 @@ import json
 #         return create_engine(DATABASE_URL)
 #     else:
 #         raise ValueError("DATABASE_URL is not set in the environment variables.")
+
+SECRET_ARN = os.getenv("APP_SECRET_ARN")
+EXPECTED_KEYS = {"RAPIDAPI_KEY", "RAPIDAPI_HOST", "S3_BUCKET_NAME", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "AWS_DEFAULT_REGION"}
+
+# load secrets from aws secrets manager
+@lru_cache(maxsize=1)
+def _load_secrets() -> dict:
+    # if no secret arn provided, return env vars
+    if not SECRET_ARN:
+        return {
+            k: os.getenv(k) 
+            for k in EXPECTED_KEYS 
+            if os.getenv(k) is not None
+        }
+
+    client = boto3.client('secretsmanager') # create client for secrets manager
+    response = client.get_secret_value(SecretId=SECRET_ARN) # get secret value using the ARN
+    payload = response.get("SecretString") or "{}"
+    data = json.loads(payload) # parse the json string into a dictionary
+
+    # merge secrets with env vars
+    merged_data = {
+        **data, # secrets from secrets manager
+        **{
+            k: os.getenv(k, data.get(k)) # env var takes precedence if exists
+            for k in EXPECTED_KEYS
+        }
+    }
+
+    return merged_data
