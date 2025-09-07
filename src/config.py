@@ -46,7 +46,7 @@ EXPECTED_KEYS = {"RAPIDAPI_KEY", "RAPIDAPI_HOST", "S3_BUCKET_NAME", "DB_HOST", "
 
 # load secrets from aws secrets manager
 @lru_cache(maxsize=1)
-def _load_secrets() -> dict:
+def _load_secret() -> dict:
     # if no secret arn provided, return env vars
     if not SECRET_ARN:
         return {
@@ -70,3 +70,7 @@ def _load_secrets() -> dict:
     }
 
     return merged_data
+
+# helper function to get config values
+def cfg(key: str, default=None):
+    return _load_secret().get(key, default)
