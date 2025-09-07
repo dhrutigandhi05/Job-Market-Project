@@ -79,3 +79,13 @@ def cfg(key: str, default=None):
 def get_s3_client():
     region = cfg("AWS_DEFAULT_REGION")  or os.getenv("AWS_REGION") or "ca-central-1"
     return boto3.client('s3', region_name=region)
+
+# postgres db connection
+def get_db_engine():
+    host = cfg("DB_HOST")
+    port = cfg("DB_PORT", "5432")
+    db   = cfg("DB_NAME")
+    user = cfg("DB_USER")
+    pwd  = cfg("DB_PASSWORD")
+    url = f"postgresql+psycopg2://{user}:{pwd}@{host}:{port}/{db}"
+    return create_engine(url, pool_pre_ping=True)
