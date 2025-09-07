@@ -6,6 +6,8 @@ from datetime import datetime
 # from config import get_s3_client, get_db_engine, S3_BUCKET_NAME
 from config import get_s3_client, get_db_engine, cfg
 
+S3_BUCKET_NAME = cfg("S3_BUCKET_NAME")
+
 def handler(event, context):
     for rec in event["Records"]:
         key = rec["s3"]["object"]["key"]

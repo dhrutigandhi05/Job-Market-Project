@@ -9,12 +9,13 @@ from config import get_s3_client, get_db_engine, cfg
 # print("host:", RAPIDAPI_HOST, "key:", RAPIDAPI_KEY[:4]+"…") # verify config
 
 API_URL = "https://jsearch.p.rapidapi.com/search"
+S3_BUCKET_NAME = cfg("S3_BUCKET_NAME")
 
 # fetches a single page of job data from the api
 def fetch_page(page=1, page_size=20, **kwargs): # kwargs handles extra params
     HEADERS = {
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": RAPIDAPI_HOST,
+        "X-RapidAPI-Key": cfg("RAPIDAPI_KEY"),
+        "X-RapidAPI-Host": cfg("RAPIDAPI_HOST"),
     }
 
     query = {"page": page, "page_size": page_size, **kwargs}

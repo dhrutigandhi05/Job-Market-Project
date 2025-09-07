@@ -77,7 +77,7 @@ def cfg(key: str, default=None):
 
 # connect to s3
 def get_s3_client():
-    region = cfg("AWS_DEFAULT_REGION")  or os.getenv("AWS_REGION") or "ca-central-1"
+    region = cfg("AWS_DEFAULT_REGION") or os.getenv("AWS_REGION") or "ca-central-1"
     return boto3.client('s3', region_name=region)
 
 # postgres db connection
