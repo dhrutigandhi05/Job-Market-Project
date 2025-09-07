@@ -2,8 +2,10 @@ import os
 from dotenv import load_dotenv
 import boto3
 from sqlalchemy import create_engine
+from functools import lru_cache
+import json
 
-load_dotenv()
+# load_dotenv()
 
 # load environment variables
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
