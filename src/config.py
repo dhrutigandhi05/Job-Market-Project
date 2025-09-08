@@ -55,7 +55,8 @@ def _load_secret() -> dict:
             if os.getenv(k) is not None
         }
 
-    client = boto3.client('secretsmanager') # create client for secrets manager
+    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "ca-central-1"
+    client = boto3.client('secretsmanager', region_name=region) # create client for secrets manager
     response = client.get_secret_value(SecretId=SECRET_ARN) # get secret value using the ARN
     payload = response.get("SecretString") or "{}"
     data = json.loads(payload) # parse the json string into a dictionary
@@ -84,8 +85,8 @@ def get_s3_client():
 def get_db_engine():
     host = cfg("DB_HOST")
     port = cfg("DB_PORT", "5432")
-    db   = cfg("DB_NAME")
+    db = cfg("DB_NAME")
     user = cfg("DB_USER")
-    pwd  = cfg("DB_PASSWORD")
+    pwd = cfg("DB_PASSWORD")
     url = f"postgresql+psycopg2://{user}:{pwd}@{host}:{port}/{db}"
     return create_engine(url, pool_pre_ping=True)
