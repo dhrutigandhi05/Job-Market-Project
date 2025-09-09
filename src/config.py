@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import boto3
 from sqlalchemy import create_engine
 from functools import lru_cache
@@ -43,6 +43,7 @@ import json
 
 SECRET_ARN = os.getenv("APP_SECRET_ARN")
 EXPECTED_KEYS = {"RAPIDAPI_KEY", "RAPIDAPI_HOST", "S3_BUCKET_NAME", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "AWS_DEFAULT_REGION"}
+REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "ca-central-1"
 
 # load secrets from aws secrets manager
 @lru_cache(maxsize=1)
@@ -55,8 +56,8 @@ def _load_secret() -> dict:
             if os.getenv(k) is not None
         }
 
-    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "ca-central-1"
-    client = boto3.client('secretsmanager', region_name=region) # create client for secrets manager
+    # region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "ca-central-1"
+    client = boto3.client('secretsmanager', region_name=REGION) # create client for secrets manager
     response = client.get_secret_value(SecretId=SECRET_ARN) # get secret value using the ARN
     payload = response.get("SecretString") or "{}"
     data = json.loads(payload) # parse the json string into a dictionary
