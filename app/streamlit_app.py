@@ -34,9 +34,18 @@ def cfg(key, default=None):
 # create engine
 @st.cache_resource
 def get_engine():
-    cfg = st.secrets["db"]
-    url = (f"postgresql+psycopg2://{cfg['user']}:{cfg['password']}"
-           f"@{cfg['host']}:{cfg['port']}/{cfg['database']}")
+    db_cfg = _load_secret().get("db")
+    if db_cfg:
+        url = (
+            f"postgresql+psycopg2://{db_cfg['user']}:{db_cfg['password']}"
+            f"@{db_cfg['host']}:{db_cfg['port']}/{db_cfg['database']}"
+        )
+    else:
+        url = (
+            f"postgresql+psycopg2://{cfg('DB_USER')}:{cfg('DB_PASSWORD')}"
+            f"@{cfg('DB_HOST')}:{cfg('DB_PORT','5432')}/{cfg('DB_NAME')}"
+        )
+        
     return create_engine(url, pool_pre_ping=True)
 
 # run a query and return a dataframe result
