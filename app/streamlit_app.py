@@ -1,9 +1,35 @@
+import os
+import boto3
+import json
 from datetime import date, timedelta
 from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine, text
+from functools import lru_cache
+
+SECRET_ARN = os.getenv("APP_SECRET_ARN")
+EXPECTED_KEYS = {"RAPIDAPI_KEY", "RAPIDAPI_HOST", "S3_BUCKET_NAME", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "AWS_DEFAULT_REGION"}
+REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "ca-central-1"
+
+@lru_cache(maxsize=1)
+def _load_secret():
+    if "db" in st.secrets:
+        return {"db": st.secrets["db"], **st.secrets}
+    if any(k in st.secrets for k in EXPECTED_KEYS):
+        return dict(st.secrets)
+    
+    if SECRET_ARN:
+        client = boto3.client("secretsmanager", region_name=REGION)
+        response = client.get_secret_value(SecretId=SECRET_ARN)
+        data = json.loads(response.get("SecretString") or "{}")
+        return {**data, **os.environ}
+    
+    return dict(os.environ)
+
+def cfg(key, default=None):
+    return _load_secret().get(key, default)
 
 # create engine
 @st.cache_resource
