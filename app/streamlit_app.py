@@ -1,51 +1,16 @@
-import os
-import boto3
-import json
 from datetime import date, timedelta
 from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine, text
-from functools import lru_cache
-
-SECRET_ARN = os.getenv("APP_SECRET_ARN")
-EXPECTED_KEYS = {"RAPIDAPI_KEY", "RAPIDAPI_HOST", "S3_BUCKET_NAME", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "AWS_DEFAULT_REGION"}
-REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "ca-central-1"
-
-@lru_cache(maxsize=1)
-def _load_secret():
-    if "db" in st.secrets:
-        return {"db": st.secrets["db"], **st.secrets}
-    if any(k in st.secrets for k in EXPECTED_KEYS):
-        return dict(st.secrets)
-    
-    if SECRET_ARN:
-        client = boto3.client("secretsmanager", region_name=REGION)
-        response = client.get_secret_value(SecretId=SECRET_ARN)
-        data = json.loads(response.get("SecretString") or "{}")
-        return {**data, **os.environ}
-    
-    return dict(os.environ)
-
-def cfg(key, default=None):
-    return _load_secret().get(key, default)
 
 # create engine
 @st.cache_resource
 def get_engine():
-    db_cfg = _load_secret().get("db")
-    if db_cfg:
-        url = (
-            f"postgresql+psycopg2://{db_cfg['user']}:{db_cfg['password']}"
-            f"@{db_cfg['host']}:{db_cfg['port']}/{db_cfg['database']}"
-        )
-    else:
-        url = (
-            f"postgresql+psycopg2://{cfg('DB_USER')}:{cfg('DB_PASSWORD')}"
-            f"@{cfg('DB_HOST')}:{cfg('DB_PORT','5432')}/{cfg('DB_NAME')}"
-        )
-        
+    cfg = st.secrets["db"]
+    url = (f"postgresql+psycopg2://{cfg['user']}:{cfg['password']}"
+           f"@{cfg['host']}:{cfg['port']}/{cfg['database']}")
     return create_engine(url, pool_pre_ping=True)
 
 # run a query and return a dataframe result
@@ -170,6 +135,9 @@ col1.metric("Jobs (rows shown)", len(jobs_df))
 col2.metric("Unique Companies", jobs_df['company'].nunique() if not jobs_df.empty else 0)
 col3.metric("Unique Locations", jobs_df['location'].nunique() if not jobs_df.empty else 0)
 
+total_jobs = len(jobs_df)
+integer = alt.Axis(format="d", tickMinStep=1)
+
 # charts
 c1, c2 = st.columns(2)
 
@@ -183,7 +151,7 @@ with c1:
             .mark_line(point=True) # line chart
             .encode(x="d:T", y="jobs:Q")
             .properties(height=300)
-        )
+        ).interactive()
 
         st.altair_chart(chart, use_container_width=True) # display chart
     else:
@@ -194,14 +162,23 @@ with c2:
     st.subheader("Top Companies")
 
     if not companies_df.empty:
+        # dynamic height so labels do not collide
+        h = max(220, 18 * len(companies_df))
         chart = (
-            alt.Chart(companies_df) # companies chart
-            .mark_bar() # bar chart
-            .encode(y=alt.Y("company:N", sort="-x"), x="c:Q")
-            .properties(height=300)
+            alt.Chart(companies_df)
+            .mark_bar()
+            .encode(
+                y=alt.Y("company:N", sort="-x", title="Company"),
+                x=alt.X("c:Q", title="Jobs", axis=integer),
+                tooltip=[alt.Tooltip("company:N", title="Company"),
+                         alt.Tooltip("c:Q", title="Jobs")]
+            )
+            .properties(height=h)
         )
 
-        st.altair_chart(chart, use_container_width=True) # display chart
+        labels = chart.mark_text(align="left", dx=3).encode(text="c:Q")
+
+        st.altair_chart(chart + labels, use_container_width=True)
     else:
         st.info("No companies found.")
 
@@ -212,14 +189,22 @@ with c3:
     st.subheader("Top skills")
 
     if not skills_df.empty:
+        h = max(240, 18 * len(skills_df))
         chart = (
-            alt.Chart(skills_df) 
-            .mark_bar() # bar chart
-            .encode(y=alt.Y("skill:N", sort="-x"), x="c:Q")
-            .properties(height=320)
+            alt.Chart(skills_df)
+            .mark_bar()
+            .encode(
+                y=alt.Y("skill:N", sort="-x", title="Skill"),
+                x=alt.X("c:Q", title="Mentions", axis=integer),
+                tooltip=[alt.Tooltip("skill:N", title="Skill"),
+                         alt.Tooltip("c:Q", title="Mentions")]
+            )
+            .properties(height=h)
         )
 
-        st.altair_chart(chart, use_container_width=True) # display chart
+        labels = chart.mark_text(align="left", dx=3).encode(text="c:Q")
+
+        st.altair_chart(chart + labels, use_container_width=True)
     else:
         st.info("No skills found.")
 
@@ -231,7 +216,7 @@ with c4:
         chart = (
             alt.Chart(salary_df)
             .mark_bar() # bar chart
-            .encode(x=alt.X("range:N", sort=None, title="Avg salary bin"),
+            .encode(x=alt.X("range:N", sort=None, title="Avg salary distribution"),
                     y=alt.Y("c:Q", title="Count"))
             .properties(height=320)
         )
@@ -240,11 +225,12 @@ with c4:
     else:
         st.info("No salary data found.")
 
+
 # results table
 st.subheader("Matching Job Listings")
 
 if not jobs_df.empty:
-    show_cols = ["job_id", "title", "company", "location", "salary_min", "salary_max", "avg_salary", "date_posted"]
+    show_cols = ["title", "company", "location", "salary_min", "salary_max", "avg_salary", "date_posted"]
     st.dataframe(jobs_df[show_cols], use_container_width=True, hide_index=True)
 else:
     st.info("No job listings found.")
