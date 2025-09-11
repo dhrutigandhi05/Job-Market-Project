@@ -185,26 +185,117 @@ with c2:
 c3, c4 = st.columns(2)
 
 # top skills
+# with c3:
+#     st.subheader("Top skills")
+
+#     if not skills_df.empty:
+#         h = max(240, 18 * len(skills_df))
+#         chart = (
+#             alt.Chart(skills_df)
+#             .mark_bar()
+#             .encode(
+#                 y=alt.Y("skill:N", sort="-x", title="Skill"),
+#                 x=alt.X("c:Q", title="Mentions", axis=integer),
+#                 tooltip=[alt.Tooltip("skill:N", title="Skill"),
+#                          alt.Tooltip("c:Q", title="Mentions")]
+#             )
+#             .properties(height=h)
+#         )
+
+#         labels = chart.mark_text(align="left", dx=3).encode(text="c:Q")
+
+#         st.altair_chart(chart + labels, use_container_width=True)
+#     else:
+#         st.info("No skills found.")
 with c3:
-    st.subheader("Top skills")
+    st.subheader("Skills overview")
 
-    if not skills_df.empty:
-        h = max(240, 18 * len(skills_df))
-        chart = (
-            alt.Chart(skills_df)
-            .mark_bar()
-            .encode(
-                y=alt.Y("skill:N", sort="-x", title="Skill"),
-                x=alt.X("c:Q", title="Mentions", axis=integer),
-                tooltip=[alt.Tooltip("skill:N", title="Skill"),
-                         alt.Tooltip("c:Q", title="Mentions")]
+    if not skills_df.empty and not jobs_df.empty:
+        # compute coverage and cumulative coverage
+        total_posts = jobs_df["job_id"].nunique()
+        sdf = skills_df.copy()
+        sdf["share"] = sdf["c"] / total_posts
+        sdf = sdf.sort_values("c", ascending=False)
+        sdf["cum_share"] = sdf["share"].cumsum()
+
+        tab_table, tab_heatmap, tab_trend = st.tabs(["Table", "Co-occurrence", "Skill trend"])
+
+        with tab_table:
+            # small, readable table instead of bars
+            show = sdf.rename(columns={"c": "mentions", "share": "coverage", "cum_share": "cum_coverage"})
+            show["coverage"] = (show["coverage"] * 100).round(1)
+            show["cum_coverage"] = (show["cum_coverage"] * 100).round(1)
+            st.caption(f"Total postings in view: {total_posts:,}")
+            st.dataframe(
+                show[["skill", "mentions", "coverage", "cum_coverage"]],
+                use_container_width=True,
+                hide_index=True
             )
-            .properties(height=h)
-        )
+            st.caption("Coverage is the percent of postings that include the skill. Cumulative shows how quickly a few skills cover most postings.")
 
-        labels = chart.mark_text(align="left", dx=3).encode(text="c:Q")
+        with tab_heatmap:
+            # simple skill co-occurrence heatmap for the top 12 skills
+            topn = min(12, len(sdf))
+            top_skills = sdf.head(topn)["skill"].tolist()
+            # fetch pairs from your existing tables
+            sql = """
+                SELECT LOWER(a.skill) AS s1, LOWER(b.skill) AS s2, COUNT(DISTINCT a.job_id) AS c
+                FROM job_skills a
+                JOIN job_skills b ON a.job_id = b.job_id AND LOWER(a.skill) < LOWER(b.skill)
+                JOIN jobs j ON j.job_id = a.job_id
+                WHERE {where}
+                GROUP BY 1,2
+            """.format(where=filters(kw, start_d, end_d, smin, smax)[0])
+            pairs = run_df(sql, filters(kw, start_d, end_d, smin, smax)[1])
+            if not pairs.empty:
+                pairs = pairs[pairs["s1"].isin(top_skills) & pairs["s2"].isin(top_skills)]
+                if not pairs.empty:
+                    # build a square matrix-like dataset
+                    left = pairs.rename(columns={"s1": "skill_a", "s2": "skill_b"})
+                    right = pairs.rename(columns={"s1": "skill_b", "s2": "skill_a"})
+                    grid = pd.concat([left, right], ignore_index=True)
 
-        st.altair_chart(chart + labels, use_container_width=True)
+                    heat = (
+                        alt.Chart(grid)
+                        .mark_rect()
+                        .encode(
+                            x=alt.X("skill_a:N", title="Skill A", sort=top_skills),
+                            y=alt.Y("skill_b:N", title="Skill B", sort=top_skills),
+                            color=alt.Color("c:Q", title="Co-mentions"),
+                            tooltip=["skill_a:N", "skill_b:N", alt.Tooltip("c:Q", title="Co-mentions")]
+                        )
+                        .properties(height=320)
+                    )
+                    st.altair_chart(heat, use_container_width=True)
+                else:
+                    st.info("Not enough overlap among top skills to draw a heatmap.")
+            else:
+                st.info("No co-occurrence data available.")
+
+        with tab_trend:
+            # trend over time for a chosen skill
+            choose_skill = st.selectbox("Pick a skill", sdf["skill"].tolist(), index=0)
+            if choose_skill:
+                sql = """
+                    SELECT j.date_posted::date AS d, COUNT(DISTINCT j.job_id) AS c
+                    FROM job_skills js
+                    JOIN jobs j ON j.job_id = js.job_id
+                    WHERE LOWER(js.skill) = :skill
+                      AND {where}
+                    GROUP BY 1
+                    ORDER BY 1
+                """.format(where=filters(kw, start_d, end_d, smin, smax)[0])
+                params = filters(kw, start_d, end_d, smin, smax)[1]
+                params["skill"] = choose_skill
+                s_trend = run_df(sql, params)
+
+                if not s_trend.empty:
+                    s_trend["ma7"] = s_trend["c"].rolling(7, min_periods=1).mean()
+                    bars = alt.Chart(s_trend).mark_bar().encode(x="d:T", y=alt.Y("c:Q", title="Mentions per day"))
+                    line = alt.Chart(s_trend).mark_line(strokeWidth=2).encode(x="d:T", y="ma7:Q")
+                    st.altair_chart((bars + line).properties(height=300), use_container_width=True)
+                else:
+                    st.info("No mentions for that skill in the selected window.")
     else:
         st.info("No skills found.")
 
