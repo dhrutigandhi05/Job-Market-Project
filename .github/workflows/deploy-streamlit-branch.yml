@@ -1,0 +1,32 @@
+name: CI on branch:main then push to deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Verify main app file is present
+        run: test -f app/streamlit_app.py
+
+      # Force push the passing commit to deploy
+      - name: Push to deploy
+        run: |
+          DEPLOY_BRANCH="deploy"
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin
+          if git show-ref --verify --quiet refs/heads/$DEPLOY_BRANCH; then
+            git branch -D $DEPLOY_BRANCH
+          fi
+          git checkout -b $DEPLOY_BRANCH
+          git push origin $DEPLOY_BRANCH --force
