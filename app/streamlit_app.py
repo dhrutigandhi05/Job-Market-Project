@@ -11,7 +11,7 @@ def get_engine():
     cfg = st.secrets["db"]
     url = (f"postgresql+psycopg2://{cfg['user']}:{cfg['password']}"
            f"@{cfg['host']}:{cfg['port']}/{cfg['database']}"
-           f"?sslmode=require&connect_timeout=5")
+           f"?sslmode=require&connect_timeout=20")
     return create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=2, pool_recycle=1800)
 
 # run a query and return a dataframe result
