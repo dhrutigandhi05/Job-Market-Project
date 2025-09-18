@@ -112,7 +112,8 @@ def load_salary(keyword, start_d, end_d, smin, smax):
 
 # main app (UI)
 st.set_page_config(page_title="Job Trends Dashboard", layout="wide")
-st.title("Job Trends Dashboard")
+st.title("TalentScope")
+st.subheader("Job Trends Dashboard")
 
 # sidebar filters
 with st.sidebar:
