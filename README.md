@@ -1,5 +1,5 @@
 # Job Trend Analysis
-This project is designed as a data pipeline and analysis platform that fetches, processes, and analyzes job-related data. It integrates with AWS services and provides both backend processing and frontend visualization using Streamlit.
+This project is designed as a data pipeline and analysis platform that fetches, processes, and analyzes job-related data. It integrates with AWS services and provides both backend processing and frontend visualization using Streamlit. Viewable at: https://job-trend-analysis-project.streamlit.app/ 
 
 ## Project Structure
     app/
